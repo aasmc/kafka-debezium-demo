@@ -1,0 +1,40 @@
+{
+  "before": null,
+  "after": {
+    "Value": {
+      "id": 25,
+      "name": "Product -1673202548",
+      "description": "Description -1673202548",
+      "price": {
+        "string": "0.10057"
+      }
+    }
+  },
+  "source": {
+    "version": "2.2.1.Final",
+    "connector": "postgresql",
+    "name": "debezium",
+    "ts_ms": 1701966752474,
+    "snapshot": {
+      "string": "false"
+    },
+    "db": "productsdb",
+    "sequence": {
+      "string": "[\"26686816\",\"26686816\"]"
+    },
+    "schema": "public",
+    "table": "products",
+    "txId": {
+      "long": 764
+    },
+    "lsn": {
+      "long": 26686816
+    },
+    "xmin": null
+  },
+  "op": "c",
+  "ts_ms": {
+    "long": 1701966752520
+  },
+  "transaction": null
+}

@@ -23,6 +23,11 @@ class ProductService(
             val saved = repository.save(product)
             log.info("Successfully saved product: {}", saved)
             TimeUnit.SECONDS.sleep(1)
+            if (saved.id!! % 10 == 0L) {
+                val prev = repository.findById(saved.id!! - 1).get()
+                prev.description = "Updated description. Prev description: ${prev.description}"
+                repository.save(prev)
+            }
         }
     }
 
