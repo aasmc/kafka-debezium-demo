@@ -1,0 +1,119 @@
+version: '3'
+volumes:
+  database:
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.2
+    hostname: zookeeper
+    container_name: zookeeper
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+        reservations:
+          memory: 512m
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.2
+    hostname: kafka
+    container_name: kafka
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+        reservations:
+          memory: 512m
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.5.2
+    hostname: schema-registry
+    container_name: schema-registry
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+        reservations:
+          memory: 512m
+    depends_on:
+      - zookeeper
+      - kafka
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'kafka:29092'
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+
+  connect:
+    image: confluentinc/cp-server-connect:7.5.2
+    container_name: connect
+    ports:
+      - "8083:8083"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: kafka:29092
+      CONNECT_GROUP_ID: "debezium-example"
+      CONNECT_REST_ADVERTISED_HOST_NAME: connect
+
+      CONNECT_CONFIG_STORAGE_TOPIC: connect-demo-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: connect-demo-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: connect-demo-statuses
+
+      CONNECT_REPLICATION_FACTOR: 1
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+
+      CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      # CLASSPATH required due to CC-2422
+      CLASSPATH: "/usr/share/java/monitoring-interceptors/monitoring-interceptors-7.5.2.jar"
+      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/,/connectors/'
+    volumes:
+      - database:/opt/docker/db/data
+      - $PWD/stack-configs:/opt/docker/stack-configs
+    command:
+      - bash
+      - -c
+      - |
+        echo "Installing connector plugins"
+        confluent-hub install --no-prompt debezium/debezium-connector-postgresql:2.2.1
+        echo "Launching Kafka Connect worker"
+        /etc/confluent/docker/run
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: productsdb
+    volumes:
+      - database:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    command: >
+      -c wal_level=logical
+      -c max_wal_senders=1
+      -c max_replication_slots=1
