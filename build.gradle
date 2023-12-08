@@ -1,5 +1,17 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
+buildscript {
+    repositories {
+        gradlePluginPortal()
+        maven {
+            url = "https://packages.confluent.io/maven/"
+        }
+        maven {
+            url = "https://jitpack.io"
+        }
+    }
+}
+
 plugins {
     id 'org.springframework.boot' version '3.2.0'
     id 'io.spring.dependency-management' version '1.1.4'
@@ -22,6 +34,12 @@ java {
 
 repositories {
     mavenCentral()
+    maven {
+        url = "https://packages.confluent.io/maven/"
+    }
+    maven {
+        url = "https://jitpack.io"
+    }
 }
 
 dependencies {
@@ -29,6 +47,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
     implementation 'org.jetbrains.kotlin:kotlin-reflect'
+    implementation 'org.springframework.kafka:spring-kafka'
+    implementation("io.confluent:kafka-avro-serializer:7.5.2")
+    implementation("org.apache.avro:avro:1.11.0")
     runtimeOnly 'org.postgresql:postgresql'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }

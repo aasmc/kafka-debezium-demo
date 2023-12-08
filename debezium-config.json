@@ -24,6 +24,14 @@
     "decimal.handling.mode": "string",
 
     "topic.creation.default.partitions": 10,
-    "topic.creation.default.replication.factor": 1
+    "topic.creation.default.replication.factor": 1,
+    "transforms": "PartitionRouting",
+    "transforms.PartitionRouting.type": "io.debezium.transforms.partitions.PartitionRouting",
+    "transforms.PartitionRouting.partition.payload.fields": "change.id",
+    "transforms.PartitionRouting.partition.topic.num": 10,
+    "transforms.PartitionRouting.predicate": "topicMatch",
+    "predicates": "topicMatch",
+    "predicates.topicMatch.type": "org.apache.kafka.connect.transforms.predicates.TopicNameMatches",
+    "predicates.topicMatch.pattern": "debezium.public.products"
   }
 }
