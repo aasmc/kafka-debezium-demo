@@ -29,4 +29,6 @@ spring:
       properties:
         specific.avro.reader: false
         schema.registry.url: http://localhost:8081
+      auto-offset-reset: earliest
+      enable-auto-commit: true
 
