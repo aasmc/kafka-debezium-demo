@@ -6,12 +6,6 @@ services:
     image: confluentinc/cp-zookeeper:7.5.2
     hostname: zookeeper
     container_name: zookeeper
-    deploy:
-      resources:
-        limits:
-          memory: 512m
-        reservations:
-          memory: 512m
     ports:
       - "2181:2181"
     environment:
@@ -22,12 +16,6 @@ services:
     image: confluentinc/cp-kafka:7.5.2
     hostname: kafka
     container_name: kafka
-    deploy:
-      resources:
-        limits:
-          memory: 512m
-        reservations:
-          memory: 512m
     depends_on:
       - zookeeper
     ports:
@@ -49,12 +37,6 @@ services:
     image: confluentinc/cp-schema-registry:7.5.2
     hostname: schema-registry
     container_name: schema-registry
-    deploy:
-      resources:
-        limits:
-          memory: 512m
-        reservations:
-          memory: 512m
     depends_on:
       - zookeeper
       - kafka

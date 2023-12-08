@@ -13,6 +13,7 @@ import java.math.BigDecimal
 class Product(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "product_id", nullable = false)
     var id: Long? = null,
     @Column(name = "name", nullable = false)
     var name: String,

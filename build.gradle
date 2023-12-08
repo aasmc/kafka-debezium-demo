@@ -19,6 +19,8 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.spring' version '1.9.20'
     id 'org.jetbrains.kotlin.plugin.jpa' version '1.9.20'
     id "org.jetbrains.kotlin.plugin.allopen" version "1.9.20"
+    id 'com.github.imflog.kafka-schema-registry-gradle-plugin' version "1.12.0"
+    id 'com.github.davidmc24.gradle.plugin.avro' version "1.9.1"
 }
 
 allOpen {
@@ -52,6 +54,14 @@ dependencies {
     implementation("org.apache.avro:avro:1.11.0")
     runtimeOnly 'org.postgresql:postgresql'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+schemaRegistry {
+    url = 'http://localhost:8081'
+    quiet = true
+    register {
+        subject('debezium.public.products-value', 'src/main/avro/product.avsc', 'AVRO')
+    }
 }
 
 tasks.withType(KotlinCompile) {

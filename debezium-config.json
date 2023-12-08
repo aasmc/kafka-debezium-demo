@@ -11,27 +11,30 @@
     "database.server.name": "dbserver1",
     "table.include.list": "public.products",
     "topic.prefix": "debezium",
-
-    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
-    "key.converter.schemas.enable": false,
     "value.converter": "io.confluent.connect.avro.AvroConverter",
     "value.converter.schema.registry.url": "http://schema-registry:8081",
-
     "heartbeat.interval.ms": "5000",
     "slot.name": "postgres_debezium",
     "publication.name": "products_publication",
     "publication.autocreate.mode": "filtered",
     "decimal.handling.mode": "string",
-
-    "topic.creation.default.partitions": 10,
+    "topic.creation.default.partitions": 3,
     "topic.creation.default.replication.factor": 1,
-    "transforms": "PartitionRouting",
+    "topic.creation.groups": "products",
+    "transforms": "unwrap,PartitionRouting",
+    "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+    "transforms.unwrap.add.fields": "op,table,lsn,source.ts_ms",
+    "transforms.unwrap.delete.handling.mode": "none",
+    "transforms.unwrap.drop.tombstones": "false",
     "transforms.PartitionRouting.type": "io.debezium.transforms.partitions.PartitionRouting",
-    "transforms.PartitionRouting.partition.payload.fields": "change.id",
-    "transforms.PartitionRouting.partition.topic.num": 10,
-    "transforms.PartitionRouting.predicate": "topicMatch",
-    "predicates": "topicMatch",
-    "predicates.topicMatch.type": "org.apache.kafka.connect.transforms.predicates.TopicNameMatches",
-    "predicates.topicMatch.pattern": "debezium.public.products"
+    "transforms.PartitionRouting.partition.payload.fields": "change.product_id",
+    "transforms.PartitionRouting.partition.topic.num": 3,
+    "message.key.columns": "public.products:product_id",
+    "transforms.PartitionRouting.predicate": "allTopic",
+    "predicates": "allTopic",
+    "predicates.allTopic.type": "org.apache.kafka.connect.transforms.predicates.TopicNameMatches",
+    "predicates.allTopic.pattern": "debezium.*",
+    "key.converter" : "org.apache.kafka.connect.storage.StringConverter",
+    "key.converter.schemas.enable": false
   }
 }

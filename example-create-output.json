@@ -1,40 +1,65 @@
 {
-  "before": null,
-  "after": {
-    "Value": {
-      "id": 25,
-      "name": "Product -1673202548",
-      "description": "Description -1673202548",
-      "price": {
-        "string": "0.10057"
+  "subject": "debezium.public.products-value",
+  "version": 1,
+  "id": 1,
+  "schema": {
+    "type ": "record ",
+    "name ": "Value ",
+    "namespace ": "debezium.public.products ",
+    "fields ": [
+      {
+        "name ": "product_id ",
+        "type ": "long "
+      },
+      {
+        "name ": "name ",
+        "type ": "string "
+      },
+      {
+        "name ": "description ",
+        "type ": "string "
+      },
+      {
+        "name ": "price ",
+        "type ": [
+          "null ",
+          "string "
+        ],
+        "default ": null
+      },
+      {
+        "name ": "__op ",
+        "type ": [
+          "null ",
+          "string "
+        ],
+        "default ": null
+      },
+      {
+        "name ": "__table ",
+        "type ": [
+          "null ",
+          "string "
+        ],
+        "default ": null
+      },
+      {
+        "name ": "__lsn ",
+        "type ": [
+          "null ",
+          "long "
+        ],
+        "default ": null
+      },
+      {
+        "name ": "__source_ts_ms ",
+        "type ": [
+          "null ",
+          "long "
+        ],
+        "default ": null
       }
-    }
-  },
-  "source": {
-    "version": "2.2.1.Final",
-    "connector": "postgresql",
-    "name": "debezium",
-    "ts_ms": 1701966752474,
-    "snapshot": {
-      "string": "false"
-    },
-    "db": "productsdb",
-    "sequence": {
-      "string": "[\"26686816\",\"26686816\"]"
-    },
-    "schema": "public",
-    "table": "products",
-    "txId": {
-      "long": 764
-    },
-    "lsn": {
-      "long": 26686816
-    },
-    "xmin": null
-  },
-  "op": "c",
-  "ts_ms": {
-    "long": 1701966752520
-  },
-  "transaction": null
+    ],
+    "connect.name ": "debezium.public.products.Value "
+  }
 }

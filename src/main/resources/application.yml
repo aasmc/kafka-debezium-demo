@@ -27,8 +27,10 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
       properties:
-        specific.avro.reader: false
+        specific.avro.reader: true
         schema.registry.url: http://localhost:8081
+        auto.register.schemas: false
+        use.latest.version: true
       auto-offset-reset: earliest
       enable-auto-commit: true
 
