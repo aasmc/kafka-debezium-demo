@@ -25,7 +25,7 @@
     "transforms": "unwrap,PartitionRouting,SetValueSchema",
     "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
     "transforms.unwrap.add.fields": "op,table,lsn,source.ts_ms",
-    "transforms.unwrap.delete.handling.mode": "none",
+    "transforms.unwrap.delete.handling.mode": "rewrite",
     "transforms.unwrap.drop.tombstones": "true",
     "transforms.PartitionRouting.type": "io.debezium.transforms.partitions.PartitionRouting",
     "transforms.PartitionRouting.partition.payload.fields": "change.product_id",
@@ -38,6 +38,8 @@
     "predicates.allTopic.type": "org.apache.kafka.connect.transforms.predicates.TopicNameMatches",
     "predicates.allTopic.pattern": "debezium.*",
     "key.converter" : "org.apache.kafka.connect.storage.StringConverter",
-    "key.converter.schemas.enable": false
+    "key.converter.schemas.enable": false,
+    "tombstones.on.delete": false,
+    "null.handling.mode": "keep"
   }
 }

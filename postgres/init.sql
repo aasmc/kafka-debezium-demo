@@ -6,6 +6,8 @@ CREATE TABLE IF NOT EXISTS products(
     PRIMARY KEY (PRODUCT_ID)
 );
 
+ALTER TABLE products REPLICA IDENTITY FULL;
+
 INSERT INTO products(NAME, DESCRIPTION, PRICE)
 VALUES ('Product One', 'Description One', 10.9);
 
