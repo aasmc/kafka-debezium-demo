@@ -1,7 +1,7 @@
 {
   "type": "record",
-  "name": "Value",
-  "namespace": "debezium.public.products",
+  "name": "AvroProduct",
+  "namespace": "ru.aasmc.avro",
   "fields": [
     {
       "name": "product_id",
@@ -17,29 +17,43 @@
     },
     {
       "name": "price",
-      "type": ["null", "string"],
+      "type": [
+        "null",
+        "string"
+      ],
       "default": null
     },
     {
       "name": "__op",
-      "type": ["null", "string"],
+      "type": [
+        "null",
+        "string"
+      ],
       "default": null
     },
     {
       "name": "__table",
-      "type": ["null", "string"],
+      "type": [
+        "null",
+        "string"
+      ],
       "default": null
     },
     {
       "name": "__lsn",
-      "type": ["null", "long"],
+      "type": [
+        "null",
+        "long"
+      ],
       "default": null
     },
     {
       "name": "__source_ts_ms",
-      "type": ["null", "long"],
+      "type": [
+        "null",
+        "long"
+      ],
       "default": null
     }
-  ],
-  "connect.name": "debezium.public.products.Value"
+  ]
 }
