@@ -21,7 +21,6 @@
     "decimal.handling.mode": "string",
     "topic.creation.default.partitions": 3,
     "topic.creation.default.replication.factor": 1,
-    "topic.creation.groups": "products",
     "transforms": "unwrap,PartitionRouting,SetValueSchema",
     "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
     "transforms.unwrap.add.fields": "op,table,lsn,source.ts_ms",
