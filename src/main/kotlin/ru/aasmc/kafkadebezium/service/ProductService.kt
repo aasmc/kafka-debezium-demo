@@ -27,8 +27,10 @@ class ProductService(
                 val prev = repository.findById(saved.id!! - 1).get()
                 prev.description = "Updated description. Prev description: ${prev.description}"
                 repository.save(prev)
+                log.info("Successfully updated product with id={}", prev.id)
             } else if (saved.id!! % 5 == 0L) {
                 repository.deleteById(saved.id!! - 1)
+                log.info("Successfully deleted product with id={}", saved.id!! - 1)
             }
         }
     }

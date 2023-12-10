@@ -713,61 +713,94 @@ N.B. Сразу сохраним запись в БД, чтобы коннект
 ```
 
 - `connector.class` - класс используемого коннектора из установленного плагина Debezium
+
 - `plugin.name` - тип используемого в PostgreSQL плагина для вычитывания данных из WAL
+
 - `table.include.list` - список таблиц, изменения которых будут отслеживаться коннектором
+
 - `topic.prefix` - префикс, который будет использоваться для наименования топика в Kafka
+
 - `value.converter` - тип конвертера, в нашем случае это AvroConverter
+
 - `value.converter.schema.registry.url` - так как мы используем Avro + Schema Registry, нам надо
     указать URL schema registry.
+
 - `value.converter.schemas.enable` - стоит ли в вообщение включать данные о его схеме, так как
     мы используем Schema Registry, то отключаем эту настройку
+
 - `heartbeat.interval.ms` - интервал между хартбитами, посылаемыми коннектором в Kafka, чтобы
    поддерживать связь с кластером Kafka, даже если не будет изменений в отслеживаемых таблицах
+
 - `slot.name` - имя слота репликации, который был создан в Postgres
+
 - `publication.name` - имя публикации, созданной в Postgres
+
 - `publication.autocreate.mode` - в документации Debezium рекомендуется при использовании плагина
     `pgoutput` устанавливать этот параметр в `filtered` (если публикации в Postgres нет, то 
     Debezium сам ее создаст только для тех таблиц, которые он отслеживает), еще один вариант - 
     `all_tables` - публикация создается для всех таблиц в базе
+
 - `decimal.handling.mode` - конфигурирует то, как числа с плавающей точкой будут обрабатываться
    конвертером данных. В нашем случае мы выбираем `string`, также доступные варианты: `precise`, 
    `double`
-- `topic.creation.default.partitions` - конфигурирует количество партиций при создании топиков
-- `topic.creation.default.replication.factor` - конфигурирует количество реплик для каждой партиции
+
+- `topic.creation.default.partitions` - конфигурирует дефолтное количество партиций при создании топиков
+
+- `topic.creation.default.replication.factor` - конфигурирует дефолтное количество реплик для каждой партиции
+
 - `transforms` - "unwrap,PartitionRouting,SetValueSchema" указываем список трансформаций, которые будут применятся к записям
-- `transforms.unwrap.type` - для трансформации unwrap используем класс io.debezium.transforms.ExtractNewRecordState
-    который извлекает из сообщения только payload
-- `transforms.unwrap.add.fields` - добавляем к payload дополнительные поля: тип операции op,
-   название таблицы table, текущий LSN lsn, время транзакции source.ts_ms
-- `transforms.unwrap.delete.handling.mode` - rewrite. Определяет, как обрабатывать события удаления.
-  Это гарантирует, что информация об удаленных записях будет сохранена и передана в сообщении Kafka
+
+- `transforms.unwrap.type` - для трансформации unwrap используем класс `io.debezium.transforms.ExtractNewRecordState`
+    который извлекает из сообщения только измененные данные. Это значительно сокращает объем передаваемой
+    по сети информации и упрощает сериализацию/десериализацию. 
+
+- `transforms.unwrap.add.fields` - добавляем к данным дополнительные поля. В нашем случае - тип операции `op`,
+   название таблицы `table`, текущий LSN `lsn`, время транзакции `source.ts_ms`
+
+- `transforms.unwrap.delete.handling.mode` -  Определяет, как обрабатывать события удаления.
+  `rewrite` гарантирует, что информация об удаленных записях будет сохранена и передана в сообщении Kafka
+
 - `transforms.unwrap.drop.tombstones` - не будем отправлять tombstone события в Kafka.
+
 - `transforms.PartitionRouting.type` - используем `io.debezium.transforms.partitions.PartitionRouting`
    для того, чтобы настроить кастомную логику отправки сообщений по партициям
-- `transforms.PartitionRouting.partition.payload.fields` - какие поля из таблицы будут участвовать
-   для определения партиции для отправки данных в Kafka. В нашем случае мы выбираем product_id
+
+- `transforms.PartitionRouting.partition.payload.fields` - указываем, какие поля из таблицы будут участвовать
+   для определения партиции для отправки данных в Kafka. В нашем случае мы выбираем `product_id`
+
 - `transforms.PartitionRouting.partition.topic.num` - указываем количество партиций для отправки 
    данных
+
 - `transforms.SetValueSchema.type` - используем `org.apache.kafka.connect.transforms.SetSchemaMetadata$Value`
     для того, чтобы "помочь" Debezium с генерацией схемы Avro на основе значения сообщения,
     а не всего сообщения, включающего ключ и другие поля
+
 - `transforms.SetValueSchema.schema.name` - указываем полное название Avro класса, который будет
    сгенерирован Debezium
+
 - `message.key.columns` - явно указываем, какие поля будут участвовать в ключе собщения, по умолчанию
-    участвуют все PRIMARY KEY в таблице
+    участвуют все `PRIMARY KEY` в таблице
+
 - `transforms.PartitionRouting.predicate` - указываем предикат, который будет применяться к
    каждой трансформации, если запись будет удовлетворять предикату, то тогда трансформация
    будет применена к записи. В данном случае этот предикат необязателен, так как мы вычитываем
    данные только из одной таблицы и отправляем только в один топик. Приведен тут для примера.
+
 - `predicates` - указываем список используемых предикатов
+
 - `predicates.allTopic.type` - для предиката allTopic используем `org.apache.kafka.connect.transforms.predicates.TopicNameMatches`
     для проверки на совпадение топика, в который отправляется сообщение
+
 - `predicates.allTopic.pattern` - указываем паттерн для сравнения топиков
+
 - `key.converter` - указываем тип конвертера для ключа сообщения. В нашем случае используем
   `org.apache.kafka.connect.storage.StringConverter`.
+
 - `key.converter.schemas.enable` - false, не отправляем вместе с сообщением схему данных о ключе
+
 - `tombstones.on.delete` - указывает, нужно ли отправлять события tombstone при удалении данных
     из таблицы. В нашем случае мы их не отправляем.
+
 - `null.handling.mode` - определяет, как коннектор должен обрабатывать null значения в данных.
   `keep` указывает коннектору сохранять поля со значением null в сообщениях Kafka. 
    Это означает, что если исходная запись содержит поля с null, эти поля будут сохранены в сообщении Kafka.
@@ -777,13 +810,19 @@ N.B. Сразу сохраним запись в БД, чтобы коннект
  curl -s -S -XPOST -H Accept:application/json -H Content-Type:application/json http://localhost:8083/connectors/ -d @debezium-config.json
 ```
 
-После этого необходимо сгенерировать Avro файлы с помощью Gradle плагина: `id 'com.github.davidmc24.gradle.plugin.avro' version "1.9.1"`
-
+Далее требуется сгенерировать Avro класс. Чтобы понять, какую схему сгенерировал Debezium, ее
+можно запросить в Schema Registry:
 ```shell
-./gradlew clean build -x test
+curl http://localhost:8081/subjects/debezium.public.products-value/versions/latest
 ```
 
-Сами файлы .avsc расположены в директории avro:
+В ответ вернется строка, из которой можно удалить все ненужные данные и составить корректный .avsc файл:
+
+```text
+{"subject":"debezium.public.products-value","version":1,"id":1,"schema":"{\"type\":\"record\",\"name\":\"Product\",\"namespace\":\"ru.aasmc.avro\",\"fields\":[{\"name\":\"product_id\",\"type\":\"long\"},{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"description\",\"type\":\"string\"},{\"name\":\"price\",\"type\":[\"null\",\"string\"],\"default\":null},{\"name\":\"__op\",\"type\":[\"null\",\"string\"],\"default\":null},{\"name\":\"__table\",\"type\":[\"null\",\"string\"],\"default\":null},{\"name\":\"__lsn\",\"type\":[\"null\",\"long\"],\"default\":null},{\"name\":\"__source_ts_ms\",\"type\":[\"null\",\"long\"],\"default\":null}],\"connect.name\":\"ru.aasmc.avro.Product\"}"}
+```
+
+Сам файл .avsc, который я обработал, расположен в директории avro:
 ```json
 {
   "type": "record",
@@ -846,23 +885,112 @@ N.B. Сразу сохраним запись в БД, чтобы коннект
 }
 ```
 
-Чтобы понять, с какой схемой мы работаем, ее можно запросить в Schema Registry:
-```shell
-curl http://localhost:8081/subjects/debezium.public.products-value/versions/latest
+Фактически, класс `AvroProduct` будет выглядеть следующим образом (без дополнительного кода, 
+сгенерированного Avro):
+```kotlin
+class AvroRecord(
+    val product_id: Long,
+    val name: String,
+    val description: String,
+    val price: String?,
+    val __op: String?,
+    val __table: String?,
+    val __lsn: String?,
+    val __source_ts_ms: Long?
+)
 ```
 
-В ответ вернется строка, из которой можно удалить все ненужные данные и составить корректный .avsc файл:
+После этого необходимо сгенерировать Avro файлы с помощью Gradle плагина: `id 'com.github.davidmc24.gradle.plugin.avro' version "1.9.1"`
 
-```text
-{"subject":"debezium.public.products-value","version":1,"id":1,"schema":"{\"type\":\"record\",\"name\":\"Product\",\"namespace\":\"ru.aasmc.avro\",\"fields\":[{\"name\":\"product_id\",\"type\":\"long\"},{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"description\",\"type\":\"string\"},{\"name\":\"price\",\"type\":[\"null\",\"string\"],\"default\":null},{\"name\":\"__op\",\"type\":[\"null\",\"string\"],\"default\":null},{\"name\":\"__table\",\"type\":[\"null\",\"string\"],\"default\":null},{\"name\":\"__lsn\",\"type\":[\"null\",\"long\"],\"default\":null},{\"name\":\"__source_ts_ms\",\"type\":[\"null\",\"long\"],\"default\":null}],\"connect.name\":\"ru.aasmc.avro.Product\"}"}
+```shell
+./gradlew clean build -x test
 ```
 
 Теперь можно запустить приложениа Spring Boot. Оно каждую секунду будет сохранять в БД новый Product,
 также периодически будет обновлятся и удалятся уже сохраненный Product. 
 
+```kotlin
+private val log = LoggerFactory.getLogger(ProductService::class.java)
+
+@Component
+class ProductService(
+    private val repository: ProductRepository
+) : ApplicationRunner {
+    val random = Random(System.currentTimeMillis())
+    override fun run(args: ApplicationArguments?) {
+        while (true) {
+            val product = generateRandomProduct()
+            val saved = repository.save(product)
+            log.info("Successfully saved product: {}", saved)
+            TimeUnit.SECONDS.sleep(1)
+            if (saved.id!! % 10 == 0L) {
+                val prev = repository.findById(saved.id!! - 1).get()
+                prev.description = "Updated description. Prev description: ${prev.description}"
+                repository.save(prev)
+            } else if (saved.id!! % 5 == 0L) {
+                repository.deleteById(saved.id!! - 1)
+            }
+        }
+    }
+
+    private fun generateRandomProduct(): Product {
+        val randomPrice = random.nextDouble()
+        val price = BigDecimal.valueOf(randomPrice)
+        val randomNum = random.nextInt()
+        val name = "Product $randomNum"
+        val description = "Description $randomNum"
+        return Product(name = name, description = description, price = price)
+    }
+}
+```
+
 Помимо этого в приложении настроен Kafka Consumer, который вычитывает данные из топика и логирует их. 
 В консьюмере настроена concurrency = 3, чтобы продемонстрировать, что данные вычитываются из разных
 партиций и наша конфигурация корректна. 
+
+```kotlin
+private val log = LoggerFactory.getLogger(DebeziumKafkaListener::class.java)
+
+@Service
+class DebeziumKafkaListener {
+
+    @KafkaListener(topics = ["debezium.public.products"], concurrency = "3")
+    fun consumerDebeziumRecords(
+        record: AvroProduct,
+        @Header(KafkaHeaders.RECEIVED_KEY) key: String,
+        @Header(KafkaHeaders.RECEIVED_PARTITION) partition: Int
+    ) {
+        log.info(
+            "Consuming record from kafka. Key {}. Record {}. Partition: {}. Thread: {}",
+            key,
+            record,
+            partition,
+            Thread.currentThread().name
+        )
+        log.info("Value from record: {}", record)
+    }
+}
+```
+
+Настройки консьюмера указаны в application.yml:
+```yml
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: ${spring.application.name}
+      bootstrap-servers: localhost:9092
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+      properties:
+        specific.avro.reader: true
+        schema.registry.url: http://localhost:8081
+      auto-offset-reset: earliest
+      enable-auto-commit: true
+```
+
+Стоит обратить внимание на конфигурацию `specific.avro.reader`: `true`, она позволяет
+вычитывать не GenericRecord, а конкретный класс, сгенерированный Avro. 
+
 
 ### Стек Технологий
 1. Java 17

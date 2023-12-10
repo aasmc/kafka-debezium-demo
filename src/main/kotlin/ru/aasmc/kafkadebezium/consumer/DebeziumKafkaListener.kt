@@ -27,5 +27,4 @@ class DebeziumKafkaListener {
         )
         log.info("Value from record: {}", record)
     }
-
 }
